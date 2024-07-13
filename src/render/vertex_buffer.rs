@@ -1,11 +1,7 @@
 use bevy::{
-    math::Vec3,
-    render::{
-        color::Color,
-        mesh::{Indices, Mesh},
-        render_resource::PrimitiveTopology,
-    },
-    transform::components::Transform,
+    color::{Color, ColorToComponents}, math::Vec3, render::{
+        mesh::{Indices, Mesh}, render_asset::RenderAssetUsages, render_resource::PrimitiveTopology
+    }, transform::components::Transform
 };
 use copyless::VecHelper;
 use lyon_tessellation::{
@@ -38,10 +34,10 @@ impl Convert<Mesh> for VertexBuffers {
             colors.alloc().init(vert.color);
         }
 
-        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::RENDER_WORLD);
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
         mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
-        mesh.set_indices(Some(Indices::U32(self.indices)));
+        mesh.insert_indices(Indices::U32(self.indices));
 
         mesh
     }
@@ -61,7 +57,7 @@ impl FillVertexConstructor<Vertex> for VertexConstructor {
 
         Vertex {
             position: [pos.x, pos.y, pos.z],
-            color: self.color.as_linear_rgba_f32(),
+            color: self.color.to_srgba().to_f32_array(),
         }
     }
 }
@@ -74,7 +70,7 @@ impl StrokeVertexConstructor<Vertex> for VertexConstructor {
 
         Vertex {
             position: [pos.x, pos.y, pos.z],
-            color: self.color.as_linear_rgba_f32(),
+            color: self.color.to_srgba().to_f32_array(),
         }
     }
 }

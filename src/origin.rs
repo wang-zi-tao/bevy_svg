@@ -1,13 +1,10 @@
 use bevy::{
-    asset::{Assets, Handle},
-    ecs::{
+    asset::{Assets, Handle}, ecs::{
         component::Component,
         entity::Entity,
         query::{Changed, Or, With, Without},
         system::{Commands, Query, Res},
-    },
-    math::{Vec2, Vec3, Vec3Swizzles},
-    transform::components::{GlobalTransform, Transform},
+    }, math::{Vec2, Vec3, Vec3Swizzles}, prelude::{DetectChanges, Ref}, transform::components::{GlobalTransform, Transform}
 };
 
 #[cfg(feature = "3d")]
@@ -94,8 +91,7 @@ pub(crate) fn apply_origin(
             &Handle<Svg>,
             &Origin,
             &mut OriginState,
-            &Transform,
-            Changed<Transform>,
+            Ref<Transform>,
             &mut GlobalTransform,
         ),
         Or<(Changed<Origin>, Changed<Transform>, ChangedMesh)>,
@@ -107,7 +103,6 @@ pub(crate) fn apply_origin(
         origin,
         mut origin_state,
         transform,
-        transform_changed,
         mut global_transform,
     ) in &mut query
     {
@@ -125,7 +120,7 @@ pub(crate) fn apply_origin(
                 *global_transform = GlobalTransform::from(gtransf);
 
                 origin_state.previous = origin.clone();
-            } else if transform_changed {
+            } else if transform.is_changed() {
                 let scaled_size = svg.size * transform.scale.xy();
                 let origin_translation = origin.compute_translation(scaled_size);
 
