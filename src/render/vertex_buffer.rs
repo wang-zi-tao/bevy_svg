@@ -57,7 +57,7 @@ impl FillVertexConstructor<Vertex> for VertexConstructor {
 
         Vertex {
             position: [pos.x, pos.y, pos.z],
-            color: self.color.to_srgba().to_f32_array(),
+            color: self.color.to_linear().to_f32_array(),
         }
     }
 }

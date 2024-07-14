@@ -134,7 +134,7 @@ impl Svg {
     }
 
     pub(crate) fn from_tree(tree: usvg::Tree) -> Svg {
-        let view_box = tree.root().abs_bounding_box();
+        let transform = tree.root().transform();
         let size = tree.size();
         let mut descriptors = vec![];
         for node in tree.root().children() {
@@ -145,10 +145,10 @@ impl Svg {
             name: Default::default(),
             size: Vec2::new(size.width() as f32, size.height() as f32),
             view_box: ViewBox {
-                x: view_box.x() as f64,
-                y: view_box.y() as f64,
-                w: view_box.width() as f64,
-                h: view_box.height() as f64,
+                x: -transform.tx as f64,
+                y: -transform.ty as f64,
+                w: (size.width() * transform.sx) as f64,
+                h: (size.height() * transform.sy) as f64,
             },
             paths: descriptors,
             mesh: Default::default(),
