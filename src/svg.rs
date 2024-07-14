@@ -86,51 +86,59 @@ impl Svg {
         buffer.convert()
     }
 
+    fn parse_tree(node: &Node, descriptors: &mut Vec<PathDescriptor>) {
+        match node {
+            Node::Group(group) => {
+                for node in group.children() {
+                    Self::parse_tree(node, descriptors);
+                }
+            }
+            Node::Path(path) => {
+                let t = node.abs_transform();
+                let abs_t = Transform::from_matrix(Mat4::from_cols(
+                    [t.sx, t.ky, 0.0, 0.0].into(),
+                    [t.kx, t.sy, 0.0, 0.0].into(),
+                    [0.0, 0.0, 1.0, 0.0].into(),
+                    [t.tx, t.ty, 0.0, 1.0].into(),
+                ));
+
+                if let Some(fill) = &path.fill() {
+                    let color = match fill.paint() {
+                        usvg::Paint::Color(c) => {
+                            Color::rgba_u8(c.red, c.green, c.blue, fill.opacity().to_u8())
+                        }
+                        _ => Color::default(),
+                    };
+
+                    descriptors.push(PathDescriptor {
+                        segments: path.convert().collect(),
+                        abs_transform: abs_t,
+                        color,
+                        draw_type: DrawType::Fill,
+                    });
+                }
+
+                if let Some(stroke) = &path.stroke() {
+                    let (color, draw_type) = stroke.convert();
+
+                    descriptors.push(PathDescriptor {
+                        segments: path.convert().collect(),
+                        abs_transform: abs_t,
+                        color,
+                        draw_type,
+                    });
+                }
+            }
+            _ => {}
+        }
+    }
+
     pub(crate) fn from_tree(tree: usvg::Tree) -> Svg {
         let view_box = tree.root().abs_bounding_box();
         let size = tree.size();
-        let mut descriptors = Vec::new();
-
+        let mut descriptors = vec![];
         for node in tree.root().children() {
-            match node {
-                Node::Path(path) => {
-                    let t = node.abs_transform();
-                    let abs_t = Transform::from_matrix(Mat4::from_cols(
-                        [t.sx, t.ky, 0.0, 0.0].into(),
-                        [t.kx, t.sy, 0.0, 0.0].into(),
-                        [0.0, 0.0, 1.0, 0.0].into(),
-                        [t.tx, t.ty, 0.0, 1.0].into(),
-                    ));
-
-                    if let Some(fill) = &path.fill() {
-                        let color = match fill.paint() {
-                            usvg::Paint::Color(c) => {
-                                Color::rgba_u8(c.red, c.green, c.blue, fill.opacity().to_u8())
-                            }
-                            _ => Color::default(),
-                        };
-
-                        descriptors.alloc().init(PathDescriptor {
-                            segments: path.convert().collect(),
-                            abs_transform: abs_t,
-                            color,
-                            draw_type: DrawType::Fill,
-                        });
-                    }
-
-                    if let Some(stroke) = &path.stroke() {
-                        let (color, draw_type) = stroke.convert();
-
-                        descriptors.alloc().init(PathDescriptor {
-                            segments: path.convert().collect(),
-                            abs_transform: abs_t,
-                            color,
-                            draw_type,
-                        });
-                    }
-                }
-                _ => {}
-            }
+            Self::parse_tree(node, &mut descriptors);
         }
 
         return Svg {
