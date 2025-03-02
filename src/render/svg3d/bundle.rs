@@ -1,23 +1,22 @@
 //! Bevy [`Bundle`] representing an SVG entity.
 
 use bevy::{
-    asset::Handle,
     ecs::bundle::Bundle,
     render::{
-        mesh::Mesh,
+        mesh::Mesh2d,
         view::{InheritedVisibility, ViewVisibility, Visibility},
     },
     transform::components::{GlobalTransform, Transform},
 };
 
-use crate::{origin::Origin, svg::Svg};
+use crate::{origin::Origin, render::svg2d::Svg2d};
 
 /// A Bevy [`Bundle`] representing an SVG entity.
 #[allow(missing_docs)]
 #[derive(Bundle)]
 pub struct Svg3dBundle {
-    pub svg: Handle<Svg>,
-    pub mesh: Handle<Mesh>,
+    pub svg: Svg2d,
+    pub mesh: Mesh2d,
     /// [`Origin`] of the coordinate system and as such the origin for the Bevy position.
     pub origin: Origin,
     pub transform: Transform,

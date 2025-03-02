@@ -10,30 +10,26 @@
 //! Each mesh is then extracted in the [`RenderSet::Extract`](bevy::render::RenderSet) and added to the
 //! [`RenderWorld`](bevy::render::RenderWorld).
 //! Afterwards it is queued in the [`RenderSet::Queue`](bevy::render::RenderSet) for actual drawing/rendering.
-
-#[cfg(feature = "3d")]
-use std::ops::Deref;
+use std::marker::PhantomData;
 
 use bevy::{
     app::{App, Plugin},
-    asset::{AssetEvent, Assets, Handle},
+    asset::{AssetEvent, Assets},
     ecs::{
-        entity::Entity,
+        change_detection::DetectChanges,
         event::EventReader,
-        query::{Added, Changed, Or},
         schedule::{IntoSystemConfigs, SystemSet},
-        system::{Commands, Query, Res, ResMut},
+        system::{Query, Res},
+        world::Ref,
     },
-    hierarchy::DespawnRecursiveExt,
-    log::debug,
     prelude::{Last, PostUpdate},
-    render::mesh::Mesh,
 };
 
-#[cfg(feature = "2d")]
-use bevy::sprite::Mesh2dHandle;
-
-use crate::{origin, render, svg::Svg};
+use crate::{
+    origin,
+    render::{self, SvgComponent},
+    svg::Svg,
+};
 
 /// Sets for this plugin.
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemSet)]
@@ -43,120 +39,48 @@ pub enum Set {
 }
 
 /// A plugin that makes sure your [`Svg`]s get rendered
-pub struct SvgRenderPlugin;
+#[derive(Default)]
+pub struct SvgRenderPlugin<C: SvgComponent>(PhantomData<C>);
 
-impl Plugin for SvgRenderPlugin {
+impl<C: SvgComponent> Plugin for SvgRenderPlugin<C> {
     fn build(&self, app: &mut App) {
-        app.add_systems(PostUpdate, (origin::add_origin_state.in_set(Set::SVG),))
-            .add_systems(
-                Last,
-                (origin::apply_origin, svg_mesh_linker.in_set(Set::SVG)),
-            )
-            .add_plugins(render::SvgPlugin);
+        app.add_systems(
+            PostUpdate,
+            (origin::add_origin_state::<C>.in_set(Set::SVG),),
+        )
+        .add_systems(
+            Last,
+            (
+                origin::apply_origin::<C>,
+                svg_mesh_linker::<C>.in_set(Set::SVG),
+            ),
+        );
     }
 }
 
-#[cfg(feature = "2d")]
-#[cfg(not(feature = "3d"))]
-type SvgMeshComponents = (
-    Entity,
-    &'static Handle<Svg>,
-    Option<&'static mut Mesh2dHandle>,
-    Option<()>,
-);
-#[cfg(not(feature = "2d"))]
-#[cfg(feature = "3d")]
-type SvgMeshComponents = (
-    Entity,
-    &'static Handle<Svg>,
-    Option<()>,
-    Option<&'static mut Handle<Mesh>>,
-);
-#[cfg(all(feature = "2d", feature = "3d"))]
-type SvgMeshComponents = (
-    Entity,
-    &'static Handle<Svg>,
-    Option<&'static mut Mesh2dHandle>,
-    Option<&'static mut Handle<Mesh>>,
-);
-
 /// Bevy system which queries for all [`Svg`] bundles and adds the correct [`Mesh`] to them.
-fn svg_mesh_linker(
-    mut commands: Commands,
+fn svg_mesh_linker<C: SvgComponent>(
     mut svg_events: EventReader<AssetEvent<Svg>>,
-    mut meshes: ResMut<Assets<Mesh>>,
     svgs: Res<Assets<Svg>>,
-    mut query: Query<SvgMeshComponents>,
-    changed_handles: Query<Entity, Or<(Changed<Handle<Svg>>, Added<Handle<Svg>>)>>,
+    mut svg_component: Query<(Ref<C>, &mut C::MeshComponent, &mut C::MaterialComponent)>,
 ) {
-    for event in svg_events.read() {
-        match event {
-            AssetEvent::Added { .. } => (),
-            AssetEvent::LoadedWithDependencies { id } => {
-                for (.., _mesh_2d, _mesh_3d) in query
-                    .iter_mut()
-                    .filter(|(_, handle, ..)| handle.id() == *id)
-                {
-                    let svg = svgs.get(*id).unwrap();
-                    debug!(
-                        "Svg `{}` created. Adding mesh component to entity.",
-                        svg.name
-                    );
-                    #[cfg(feature = "2d")]
-                    _mesh_2d.map(|mut mesh| mesh.0 = svg.mesh.clone());
-                    #[cfg(feature = "3d")]
-                    _mesh_3d.map(|mut mesh| *mesh = svg.mesh.clone());
-                }
-            }
-            AssetEvent::Modified { id } => {
-                for (.., _mesh_2d, _mesh_3d) in query
-                    .iter_mut()
-                    .filter(|(_, handle, ..)| handle.id() == *id)
-                {
-                    let svg = svgs.get(*id).unwrap();
-                    debug!(
-                        "Svg `{}` modified. Changing mesh component of entity.",
-                        svg.name
-                    );
-                    #[cfg(feature = "2d")]
-                    _mesh_2d.filter(|mesh| mesh.0 != svg.mesh).map(|mut mesh| {
-                        let old_mesh = mesh.0.clone();
-                        mesh.0 = svg.mesh.clone();
-                        meshes.remove(&old_mesh);
-                    });
-                    #[cfg(feature = "3d")]
-                    _mesh_3d
-                        .filter(|mesh| mesh.deref() != &svg.mesh)
-                        .map(|mut mesh| {
-                            let old_mesh = mesh.clone();
-                            *mesh = svg.mesh.clone();
-                            meshes.remove(&old_mesh);
-                        });
-                }
-            }
-            AssetEvent::Unused { id } | AssetEvent::Removed { id } => {
-                for (entity, ..) in query.iter_mut().filter(|(_, svg, ..)| svg.id() == *id) {
-                    commands.entity(entity).despawn_recursive();
-                }
-            }
-        }
-    }
+    let changed_handles = svg_events
+        .read()
+        .filter_map(|event| match event {
+            AssetEvent::Added { id } | AssetEvent::Modified { id } => Some(*id),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
 
     // Ensure all correct meshes are set for entities which have had modified handles
-    for entity in changed_handles.iter() {
-        let Ok((.., handle, _mesh_2d, _mesh_3d)) = query.get_mut(entity) else {
-            continue;
-        };
-        let Some(svg) = svgs.get(handle) else {
-            continue;
-        };
-        debug!(
-            "Svg handle for entity `{:?}` modified. Changing mesh component of entity.",
-            entity
-        );
-        #[cfg(feature = "2d")]
-        _mesh_2d.map(|mut mesh| mesh.0 = svg.mesh.clone());
-        #[cfg(feature = "3d")]
-        _mesh_3d.map(|mut mesh| *mesh = svg.mesh.clone());
+    for (svg_component, mut mesh, mut material) in svg_component.iter_mut() {
+        if svg_component.is_changed() {
+            *material = C::new_material(svg_component.get_handle().clone());
+        }
+        if changed_handles.contains(&svg_component.get_handle().id()) {
+            if let Some(svg) = svgs.get(svg_component.get_handle()) {
+                *C::get_mesh_mut(&mut mesh) = svg.mesh.clone();
+            }
+        }
     }
 }
