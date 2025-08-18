@@ -105,7 +105,7 @@ impl Svg {
                 if let Some(fill) = &path.fill() {
                     let color = match fill.paint() {
                         usvg::Paint::Color(c) => {
-                            Color::rgba_u8(c.red, c.green, c.blue, fill.opacity().to_u8())
+                            Color::srgba_u8(c.red, c.green, c.blue, fill.opacity().to_u8())
                         }
                         _ => Color::default(),
                     };
@@ -299,7 +299,7 @@ impl Convert<(Color, DrawType)> for &usvg::Stroke {
     #[inline]
     fn convert(self) -> (Color, DrawType) {
         let color = match self.paint() {
-            usvg::Paint::Color(c) => Color::rgba_u8(c.red, c.green, c.blue, self.opacity().to_u8()),
+            usvg::Paint::Color(c) => Color::srgba_u8(c.red, c.green, c.blue, self.opacity().to_u8()),
             usvg::Paint::LinearGradient(_)
             | usvg::Paint::RadialGradient(_)
             | usvg::Paint::Pattern(_) => Color::default(),

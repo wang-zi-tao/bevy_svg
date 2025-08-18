@@ -3,7 +3,7 @@ pub(crate) mod tessellation;
 mod vertex_buffer;
 use crate::svg::Svg;
 use bevy::{
-    ecs::{component::ComponentId, world::DeferredWorld},
+    ecs::{component::{ComponentId, HookContext, Mutable}, world::DeferredWorld},
     prelude::*,
 };
 
@@ -15,8 +15,8 @@ pub(crate) mod svg3d;
 pub use plugin::SvgPlugin;
 
 pub(crate) trait SvgComponent: Component {
-    type MeshComponent: Component;
-    type MaterialComponent: Component;
+    type MeshComponent: Component<Mutability = Mutable>;
+    type MaterialComponent: Component<Mutability = Mutable>;
 
     fn get_handle(&self) -> &Handle<Svg>;
     fn new_material(svg: Handle<Svg>) -> Self::MaterialComponent;
@@ -25,9 +25,9 @@ pub(crate) trait SvgComponent: Component {
 
 fn svg_on_insert<C: SvgComponent>(
     mut world: DeferredWorld,
-    entity: Entity,
-    _component_id: ComponentId,
+    context: HookContext,
 ) {
+    let entity= context.entity;
     let component = world.entity(entity).get_components::<&C>().unwrap();
     let handle = component.get_handle().clone();
     let entity = world.entity(entity).id();

@@ -6,7 +6,7 @@ license = "MIT OR Apache-2.0"
 name = "bevy_svg"
 readme = "README.md"
 repository = "https://github.com/Weasy666/bevy_svg/"
-version = "0.15.0"
+version = "0.16.0"
 keywords = ["gamedev", "graphics", "bevy", "svg"]
 categories = ["Graphics", "Game engines", "Rendering"]
 exclude = ["assets", "examples"]
@@ -21,7 +21,7 @@ default = ["2d", "3d"]
 3d = ["bevy/bevy_pbr"]
 
 [dependencies]
-bevy = { version = "0.15", default-features = false, features = ["bevy_asset", "bevy_core_pipeline", "bevy_render"] }
+bevy = { version = "0.16", default-features = false, features = ["bevy_asset", "bevy_core_pipeline", "bevy_render", "bevy_log"] }
 copyless = "0.1"
 
 lyon_geom = "1.0"
@@ -32,56 +32,3 @@ svgtypes = "0.15"
 
 anyhow = "1.0"
 thiserror = "1.0"
-
-[dev-dependencies]
-bevy = { version = "0.14", default-features = true }
-
-#### 2D examples ####
-[[example]]
-name = "2d_complex_one_color"
-path = "examples/2d/complex_one_color.rs"
-
-[[example]]
-name = "2d_multiple_translation"
-path = "examples/2d/multiple_translation.rs"
-
-[[example]]
-name = "2d_origin_check"
-path = "examples/2d/origin_check.rs"
-
-[[example]]
-name = "2d_preloading"
-path = "examples/2d/preloading.rs"
-
-[[example]]
-name = "2d_twinkle"
-path = "examples/2d/twinkle.rs"
-
-[[example]]
-name = "2d_two_colors"
-path = "examples/2d/two_colors.rs"
-
-#### 3D examples ####
-[[example]]
-name = "3d_complex_one_color"
-path = "examples/3d/complex_one_color.rs"
-
-[[example]]
-name = "3d_multiple_perspective"
-path = "examples/3d/multiple_perspective.rs"
-
-[[example]]
-name = "3d_origin_check"
-path = "examples/3d/origin_check.rs"
-
-[[example]]
-name = "3d_multiple_translation"
-path = "examples/3d/multiple_translation.rs"
-
-[[example]]
-name = "3d_twinkle"
-path = "examples/3d/twinkle.rs"
-
-[[example]]
-name = "3d_two_colors"
-path = "examples/3d/two_colors.rs"

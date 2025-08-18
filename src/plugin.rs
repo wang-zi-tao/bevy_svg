@@ -18,7 +18,7 @@ use bevy::{
     ecs::{
         change_detection::DetectChanges,
         event::EventReader,
-        schedule::{IntoSystemConfigs, SystemSet},
+        schedule::{IntoScheduleConfigs as _, SystemSet},
         system::{Query, Res},
         world::Ref,
     },
@@ -27,7 +27,7 @@ use bevy::{
 
 use crate::{
     origin,
-    render::{self, SvgComponent},
+    render::SvgComponent,
     svg::Svg,
 };
 
