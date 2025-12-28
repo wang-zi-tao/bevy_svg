@@ -4,11 +4,11 @@ use bevy::{
     asset::{Asset, Handle},
     color::Color,
     math::{Mat4, Vec2},
+    mesh::Mesh,
     reflect::{std_traits::ReflectDefault, Reflect},
-    render::{mesh::Mesh, render_resource::AsBindGroup},
+    render::render_resource::AsBindGroup,
     transform::components::Transform,
 };
-use copyless::VecHelper;
 use lyon_geom::euclid::{default::Transform2D, Point2D, UnknownUnit};
 use lyon_path::PathEvent;
 use lyon_tessellation::{math::Point, FillTessellator, StrokeTessellator};
@@ -299,7 +299,9 @@ impl Convert<(Color, DrawType)> for &usvg::Stroke {
     #[inline]
     fn convert(self) -> (Color, DrawType) {
         let color = match self.paint() {
-            usvg::Paint::Color(c) => Color::srgba_u8(c.red, c.green, c.blue, self.opacity().to_u8()),
+            usvg::Paint::Color(c) => {
+                Color::srgba_u8(c.red, c.green, c.blue, self.opacity().to_u8())
+            }
             usvg::Paint::LinearGradient(_)
             | usvg::Paint::RadialGradient(_)
             | usvg::Paint::Pattern(_) => Color::default(),

@@ -1,12 +1,14 @@
-use bevy::{asset::Handle, prelude::*, render::render_resource::Shader};
+use bevy::{
+    asset::{uuid_handle, Handle},
+    prelude::*,
+};
 
-mod bundle;
 mod plugin;
 
 /// Handle to the custom shader with a unique random ID
-pub const SVG_3D_SHADER_HANDLE:  Handle<Shader> = Handle::weak_from_u128(8_514_826_640_451_853_414);
+pub const SVG_3D_SHADER_HANDLE: Handle<Shader> =
+    uuid_handle!("c7d158fe-e3de-11f0-87bd-33279dc14325");
 
-pub use bundle::Svg3dBundle;
 pub use plugin::RenderPlugin;
 
 use crate::{origin::Origin, svg::Svg};
@@ -14,7 +16,7 @@ use crate::{origin::Origin, svg::Svg};
 use super::{svg_on_insert, SvgComponent};
 
 #[derive(Component, Default)]
-#[require(Mesh3d, Origin, MeshMaterial3d<Svg>)]
+#[require(Mesh3d, Origin, Transform, Visibility)]
 #[component(on_insert = svg_on_insert::<Svg3d>)]
 pub struct Svg3d(pub Handle<Svg>);
 

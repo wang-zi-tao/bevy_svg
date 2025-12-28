@@ -1,7 +1,5 @@
 use bevy::{
-    color::{Color, ColorToComponents}, math::Vec3, render::{
-        mesh::{Indices, Mesh}, render_asset::RenderAssetUsages, render_resource::PrimitiveTopology
-    }, transform::components::Transform
+    asset::RenderAssetUsages, color::{Color, ColorToComponents}, math::Vec3, mesh::{Indices, Mesh}, render::render_resource::PrimitiveTopology, transform::components::Transform
 };
 use copyless::VecHelper;
 use lyon_tessellation::{

@@ -2,7 +2,7 @@ use bevy::{
     app::{App, Plugin},
     asset::{load_internal_asset, AssetApp},
     pbr::{Material, MaterialPlugin},
-    render::render_resource::{Shader, ShaderRef},
+    shader::{Shader, ShaderRef},
 };
 
 use crate::svg::Svg;
