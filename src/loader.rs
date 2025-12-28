@@ -50,7 +50,7 @@ impl AssetLoader for SvgAssetLoader {
                 "Tessellating SVG: {} ... Done",
                 load_context.path().display()
             );
-            let mesh_handle = load_context.add_labeled_asset("mesh".to_string(), mesh);
+            let mesh_handle = load_context.add_labeled_asset("mesh".to_owned(), mesh);
             svg.mesh = mesh_handle;
 
             Ok(svg)
@@ -79,8 +79,8 @@ pub struct FileSvgError {
     pub(crate) error: SvgError,
     pub(crate) path: String,
 }
-impl std::fmt::Display for FileSvgError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+impl core::fmt::Display for FileSvgError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::result::Result<(), core::fmt::Error> {
         write!(
             f,
             "Error reading SVG file {}: {}, this is an error in `bevy_svg`.",

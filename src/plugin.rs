@@ -10,13 +10,13 @@
 //! Each mesh is then extracted in the [`RenderSet::Extract`](bevy::render::RenderSet) and added to the
 //! [`RenderWorld`](bevy::render::RenderWorld).
 //! Afterwards it is queued in the [`RenderSet::Queue`](bevy::render::RenderSet) for actual drawing/rendering.
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 use bevy::{
     app::{App, Plugin},
     asset::{AssetEvent, Assets},
     ecs::{
-        change_detection::DetectChanges,
+        change_detection::DetectChanges as _,
         event::EventReader,
         schedule::{IntoScheduleConfigs as _, SystemSet},
         system::{Query, Res},
@@ -73,7 +73,7 @@ fn svg_mesh_linker<C: SvgComponent>(
         .collect::<Vec<_>>();
 
     // Ensure all correct meshes are set for entities which have had modified handles
-    for (svg_component, mut mesh, mut material) in svg_component.iter_mut() {
+    for (svg_component, mut mesh, mut material) in &mut svg_component {
         if svg_component.is_changed() {
             *material = C::new_material(svg_component.get_handle().clone());
         }

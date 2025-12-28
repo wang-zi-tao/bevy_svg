@@ -1,6 +1,6 @@
 use bevy::{
     app::{App, Plugin},
-    asset::{load_internal_asset, AssetApp},
+    asset::{load_internal_asset, AssetApp as _},
     pbr::{Material, MaterialPlugin},
     shader::{Shader, ShaderRef},
 };

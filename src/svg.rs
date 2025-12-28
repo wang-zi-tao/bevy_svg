@@ -29,7 +29,7 @@ pub struct Svg {
     /// Size of the SVG.
     pub size: Vec2,
     #[reflect(ignore)]
-    /// ViewBox of the SVG.
+    /// `ViewBox` of the SVG.
     pub view_box: ViewBox,
     #[reflect(ignore)]
     /// All paths that make up the SVG.
@@ -61,22 +61,23 @@ impl Svg {
         bytes: &[u8],
         path: impl Into<PathBuf>,
         fonts: Option<impl Into<PathBuf>>,
-    ) -> Result<Svg, FileSvgError> {
+    ) -> Result<Self, FileSvgError> {
         let mut opts = usvg::Options::default();
         let fontdb = opts.fontdb_mut();
         fontdb.load_system_fonts();
-        fontdb.load_fonts_dir(fonts.map(|p| p.into()).unwrap_or("./assets".into()));
+        fontdb.load_fonts_dir(fonts.map_or("./assets".into(), |p| p.into()));
 
         let pathbuf: PathBuf = path.into();
-        let svg_tree = usvg::Tree::from_data(&bytes, &opts).map_err(|err| FileSvgError {
+        let svg_tree = usvg::Tree::from_data(bytes, &opts).map_err(|err| FileSvgError {
             error: err.into(),
             path: pathbuf.display().to_string(),
         })?;
 
-        Ok(Svg::from_tree(svg_tree))
+        return Ok(Self::from_tree(svg_tree))
     }
 
     /// Creates a bevy mesh from the SVG data.
+    #[must_use] 
     pub fn tessellate(&self) -> Mesh {
         let buffer = tessellation::generate_buffer(
             self,
@@ -133,7 +134,7 @@ impl Svg {
         }
     }
 
-    pub(crate) fn from_tree(tree: usvg::Tree) -> Svg {
+    pub(crate) fn from_tree(tree: usvg::Tree) -> Self {
         let transform = tree.root().transform();
         let size = tree.size();
         let mut descriptors = vec![];
@@ -141,18 +142,18 @@ impl Svg {
             Self::parse_tree(node, &mut descriptors);
         }
 
-        return Svg {
+        Self {
             name: Default::default(),
-            size: Vec2::new(size.width() as f32, size.height() as f32),
+            size: Vec2::new(size.width(), size.height()),
             view_box: ViewBox {
-                x: -transform.tx as f64,
-                y: -transform.ty as f64,
-                w: (size.width() * transform.sx) as f64,
-                h: (size.height() * transform.sy) as f64,
+                x: f64::from(-transform.tx),
+                y: f64::from(-transform.ty),
+                w: f64::from(size.width() * transform.sx),
+                h: f64::from(size.height() * transform.sy),
             },
             paths: descriptors,
             mesh: Default::default(),
-        };
+        }
     }
 }
 
@@ -171,7 +172,7 @@ pub enum DrawType {
 }
 
 // Taken from https://github.com/nical/lyon/blob/74e6b137fea70d71d3b537babae22c6652f8843e/examples/wgpu_svg/src/main.rs
-pub(crate) struct PathConvIter<'iter> {
+pub struct PathConvIter<'iter> {
     iter: PathSegmentsIter<'iter>,
     prev: Point,
     first: Point,
@@ -180,11 +181,11 @@ pub(crate) struct PathConvIter<'iter> {
     scale: Transform2D<f32>,
 }
 
-fn convert_point(value: usvg::tiny_skia_path::Point) -> Point2D<f32, UnknownUnit> {
+const fn convert_point(value: usvg::tiny_skia_path::Point) -> Point2D<f32, UnknownUnit> {
     Point2D::new(value.x, value.y)
 }
 
-impl<'iter> Iterator for PathConvIter<'iter> {
+impl Iterator for PathConvIter<'_> {
     type Item = PathEvent;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -221,7 +222,7 @@ impl<'iter> Iterator for PathConvIter<'iter> {
                     to: self.prev,
                 });
             }
-            Some(PathSegment::QuadTo(ctrl, p)) => {
+            Some(PathSegment::QuadTo(_ctrl, p)) => {
                 self.needs_end = true;
                 let from = self.prev;
                 self.prev = convert_point(p);
@@ -291,7 +292,7 @@ impl<'iter> Convert<PathConvIter<'iter>> for &'iter usvg::Path {
                     1.0
                 },
             ),
-        };
+        }
     }
 }
 
@@ -320,10 +321,10 @@ impl Convert<(Color, DrawType)> for &usvg::Stroke {
         };
 
         let opt = lyon_tessellation::StrokeOptions::tolerance(0.01)
-            .with_line_width(self.width().get() as f32)
+            .with_line_width(self.width().get())
             .with_line_cap(linecap)
             .with_line_join(linejoin);
 
-        return (color, DrawType::Stroke(opt));
+        return (color, DrawType::Stroke(opt))
     }
 }

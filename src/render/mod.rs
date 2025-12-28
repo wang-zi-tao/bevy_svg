@@ -1,5 +1,5 @@
 mod plugin;
-pub(crate) mod tessellation;
+pub mod tessellation;
 mod vertex_buffer;
 use crate::svg::Svg;
 use bevy::{
@@ -8,13 +8,13 @@ use bevy::{
 };
 
 #[cfg(feature = "2d")]
-pub(crate) mod svg2d;
+pub mod svg2d;
 #[cfg(feature = "3d")]
-pub(crate) mod svg3d;
+pub mod svg3d;
 
 pub use plugin::SvgPlugin;
 
-pub(crate) trait SvgComponent: Component {
+pub trait SvgComponent: Component {
     type MeshComponent: Component<Mutability = Mutable>;
     type MaterialComponent: Component<Mutability = Mutable>;
 

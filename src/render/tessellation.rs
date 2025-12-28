@@ -6,11 +6,11 @@ use bevy::{
 use lyon_tessellation::{BuffersBuilder, FillOptions, FillTessellator, StrokeTessellator};
 
 use crate::{
-    render::vertex_buffer::{BufferExt, VertexBuffers, VertexConstructor},
+    render::vertex_buffer::{BufferExt as _, VertexBuffers, VertexConstructor},
     svg::{DrawType, Svg},
 };
 
-pub(crate) fn generate_buffer(
+pub fn generate_buffer(
     svg: &Svg,
     fill_tess: &mut FillTessellator,
     stroke_tess: &mut StrokeTessellator,
@@ -43,7 +43,7 @@ pub(crate) fn generate_buffer(
                         },
                     ),
                 ) {
-                    error!("FillTessellator error: {:?}", e)
+                    error!("FillTessellator error: {:?}", e);
                 }
             }
             DrawType::Stroke(opts) => {
@@ -58,7 +58,7 @@ pub(crate) fn generate_buffer(
                         },
                     ),
                 ) {
-                    error!("StrokeTessellator error: {:?}", e)
+                    error!("StrokeTessellator error: {:?}", e);
                 }
             }
         }

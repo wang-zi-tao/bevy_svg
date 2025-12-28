@@ -1,14 +1,14 @@
 use bevy::{
     prelude::*,
     asset::Assets,
-    math::{Vec2, Vec3, Vec3Swizzles},
-    prelude::{DetectChanges, Ref},
+    math::{Vec2, Vec3, Vec3Swizzles as _},
+    prelude::{DetectChanges as _, Ref},
     transform::components::{GlobalTransform, Transform},
 };
 
 use crate::{render::SvgComponent, svg::Svg};
 
-#[derive(Clone, Component, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Component, Copy, Debug, Default, PartialEq, Eq)]
 /// Origin of the coordinate system.
 pub enum Origin {
     /// Bottom left of the image or viewbox.
@@ -27,26 +27,27 @@ pub enum Origin {
 impl Origin {
     /// Computes the translation for an origin. The resulting translation needs to be added
     /// to the translation of the SVG.
+    #[must_use] 
     pub fn compute_translation(&self, scaled_size: Vec2) -> Vec3 {
         match self {
-            Origin::BottomLeft => Vec3::new(0.0, scaled_size.y, 0.0),
-            Origin::BottomRight => Vec3::new(-scaled_size.x, scaled_size.y, 0.0),
-            Origin::Center => Vec3::new(-scaled_size.x * 0.5, scaled_size.y * 0.5, 0.0),
+            Self::BottomLeft => Vec3::new(0.0, scaled_size.y, 0.0),
+            Self::BottomRight => Vec3::new(-scaled_size.x, scaled_size.y, 0.0),
+            Self::Center => Vec3::new(-scaled_size.x * 0.5, scaled_size.y * 0.5, 0.0),
             // Standard SVG origin is top left, so we don't need to do anything
-            Origin::TopLeft => Vec3::ZERO,
-            Origin::TopRight => Vec3::new(-scaled_size.x, 0.0, 0.0),
+            Self::TopLeft => Vec3::ZERO,
+            Self::TopRight => Vec3::new(-scaled_size.x, 0.0, 0.0),
         }
     }
 }
 
-#[derive(Clone, Component, Copy, Debug, PartialEq)]
-pub(crate) struct OriginState {
+#[derive(Clone, Component, Copy, Debug, PartialEq, Eq)]
+pub struct OriginState {
     previous: Origin,
 }
 
-/// Checkes if a "new" SVG bundle was added by looking for a missing OriginState
+/// Checkes if a "new" SVG bundle was added by looking for a missing `OriginState`
 /// and then adds it to the entity.
-pub(crate) fn add_origin_state<C: SvgComponent>(
+pub fn add_origin_state<C: SvgComponent>(
     mut commands: Commands,
     query: Query<Entity, (With<C>, With<C::MeshComponent>, Without<OriginState>)>,
 ) {
@@ -59,7 +60,7 @@ pub(crate) fn add_origin_state<C: SvgComponent>(
 
 /// Gets all SVGs with a changed origin or transform and checks if the origin offset
 /// needs to be applied.
-pub(crate) fn apply_origin<C: SvgComponent>(
+pub fn apply_origin<C: SvgComponent>(
     svgs: Res<Assets<Svg>>,
     mut query: Query<
         (
@@ -92,7 +93,7 @@ pub(crate) fn apply_origin<C: SvgComponent>(
                 gtransf.translation.z += origin_translation.z - reverse_origin_translation.z;
                 *global_transform = GlobalTransform::from(gtransf);
 
-                origin_state.previous = origin.clone();
+                origin_state.previous = *origin;
             } else if transform.is_changed() {
                 let scaled_size = svg.size * transform.scale.xy();
                 let origin_translation = origin.compute_translation(scaled_size);

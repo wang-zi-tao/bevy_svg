@@ -56,7 +56,7 @@ use crate::plugin::SvgRenderPlugin;
 use crate::{loader::SvgAssetLoader, svg::Svg};
 use bevy::{
     app::{App, Plugin},
-    asset::AssetApp,
+    asset::AssetApp as _,
 };
 
 /// A plugin that provides resources and a system to draw [`Svg`]s.

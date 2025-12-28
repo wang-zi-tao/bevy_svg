@@ -1,7 +1,7 @@
 use bevy::{
-    asset::RenderAssetUsages, color::{Color, ColorToComponents}, math::Vec3, mesh::{Indices, Mesh}, render::render_resource::PrimitiveTopology, transform::components::Transform
+    asset::RenderAssetUsages, color::{Color, ColorToComponents as _}, math::Vec3, mesh::{Indices, Mesh}, render::render_resource::PrimitiveTopology, transform::components::Transform
 };
-use copyless::VecHelper;
+use copyless::VecHelper as _;
 use lyon_tessellation::{
     self, FillVertex, FillVertexConstructor, StrokeVertex, StrokeVertexConstructor,
 };
@@ -11,23 +11,23 @@ use crate::Convert;
 /// A vertex with all the necessary attributes to be inserted into a Bevy
 /// [`Mesh`](bevy::render::mesh::Mesh).
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) struct Vertex {
+pub struct Vertex {
     position: [f32; 3],
     color: [f32; 4],
 }
 
 /// The index type of a Bevy [`Mesh`](bevy::render::mesh::Mesh).
-pub(crate) type IndexType = u32;
+pub type IndexType = u32;
 
 /// Lyon's [`VertexBuffers`] generic data type defined for [`Vertex`].
-pub(crate) type VertexBuffers = lyon_tessellation::VertexBuffers<Vertex, IndexType>;
+pub type VertexBuffers = lyon_tessellation::VertexBuffers<Vertex, IndexType>;
 
 impl Convert<Mesh> for VertexBuffers {
     fn convert(self) -> Mesh {
         let mut positions = Vec::with_capacity(self.vertices.len());
         let mut colors = Vec::with_capacity(self.vertices.len());
 
-        for vert in self.vertices.into_iter() {
+        for vert in self.vertices {
             positions.alloc().init(vert.position);
             colors.alloc().init(vert.color);
         }
@@ -42,7 +42,7 @@ impl Convert<Mesh> for VertexBuffers {
 }
 
 /// Zero-sized type used to implement various vertex construction traits from Lyon.
-pub(crate) struct VertexConstructor {
+pub struct VertexConstructor {
     pub(crate) color: Color,
     pub(crate) transform: Transform,
 }
@@ -73,32 +73,32 @@ impl StrokeVertexConstructor<Vertex> for VertexConstructor {
     }
 }
 
-pub(crate) trait BufferExt<A> {
+pub trait BufferExt<A> {
     fn extend_one(&mut self, item: A);
     fn extend<T: IntoIterator<Item = A>>(&mut self, iter: T);
 }
 
-impl BufferExt<VertexBuffers> for VertexBuffers {
-    fn extend_one(&mut self, item: VertexBuffers) {
+impl BufferExt<Self> for VertexBuffers {
+    fn extend_one(&mut self, item: Self) {
         let offset = self.vertices.len() as u32;
 
-        for vert in item.vertices.into_iter() {
+        for vert in item.vertices {
             self.vertices.alloc().init(vert);
         }
-        for idx in item.indices.into_iter() {
+        for idx in item.indices {
             self.indices.alloc().init(idx + offset);
         }
     }
 
-    fn extend<T: IntoIterator<Item = VertexBuffers>>(&mut self, iter: T) {
+    fn extend<T: IntoIterator<Item = Self>>(&mut self, iter: T) {
         let mut offset = self.vertices.len() as u32;
 
-        for buf in iter.into_iter() {
+        for buf in iter {
             let num_verts = buf.vertices.len() as u32;
-            for vert in buf.vertices.into_iter() {
+            for vert in buf.vertices {
                 self.vertices.alloc().init(vert);
             }
-            for idx in buf.indices.into_iter() {
+            for idx in buf.indices {
                 self.indices.alloc().init(idx + offset);
             }
             offset += num_verts;
