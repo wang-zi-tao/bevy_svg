@@ -17,12 +17,11 @@ use bevy::{
     asset::{AssetEvent, Assets},
     ecs::{
         change_detection::DetectChanges as _,
-        event::EventReader,
-        schedule::{IntoScheduleConfigs as _, SystemSet},
+        schedule::{SystemSet},
         system::{Query, Res},
         world::Ref,
     },
-    prelude::{Last, PostUpdate},
+    prelude::{IntoScheduleConfigs as _, Last, MessageReader, PostUpdate},
 };
 
 use crate::{
@@ -60,7 +59,7 @@ impl<C: SvgComponent> Plugin for SvgRenderPlugin<C> {
 
 /// Bevy system which queries for all [`Svg`] bundles and adds the correct [`Mesh`] to them.
 fn svg_mesh_linker<C: SvgComponent>(
-    mut svg_events: EventReader<AssetEvent<Svg>>,
+    mut svg_events: MessageReader<AssetEvent<Svg>>,
     svgs: Res<Assets<Svg>>,
     mut svg_component: Query<(Ref<C>, &mut C::MeshComponent, &mut C::MaterialComponent)>,
 ) {

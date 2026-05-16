@@ -1,8 +1,8 @@
 use bevy::{
     prelude::*,
     asset::Assets,
-    math::{Vec2, Vec3, Vec3Swizzles as _},
-    prelude::{DetectChanges as _, Ref},
+    math::{Vec2, Vec3},
+    prelude::Ref,
     transform::components::{GlobalTransform, Transform},
 };
 
